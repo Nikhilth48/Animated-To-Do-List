@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Animated To-Do List</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      color: #fff;
+      background: #111;
+      position: relative;
+      transition: background 0.4s, color 0.4s;
+    }
+
+    .light-mode {
+      background: #f0f0f0;
+      color: #111;
+    }
+
+    .light-mode .container {
+      background: rgba(255, 255, 255, 0.8);
+      color: #111;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 10;
+    }
+
+    .theme-toggle button {
+      font-size: 20px;
+      padding: 8px 12px;
+      border: none;
+      background: #ffffff33;
+      border-radius: 50%;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .animated-bg {
+      position: fixed;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      pointer-events: none;
+      background: radial-gradient(circle at center, #4facfe, #00f2fe, #43e97b, #38f9d7);
+      background-size: 400% 400%;
+      animation: move 20s infinite linear;
+      z-index: -1;
+      opacity: 0.2;
+      filter: blur(80px);
+      transition: all 0.3s ease;
+    }
+
+    @keyframes move {
+      0% { transform: translate(0%, 0%); }
+      50% { transform: translate(20%, 20%); }
+      100% { transform: translate(0%, 0%); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .input-group input[type="text"],
+    .input-group input[type="date"] {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+      min-width: 0;
+    }
+
+    .input-group button {
+      padding: 10px 16px;
+      font-weight: bold;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    li {
+      background: rgba(255, 255, 255, 0.05);
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      transition: all 0.3s ease;
+    }
+
+    li.focused {
+      z-index: 2;
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+
+    .blurred {
+      filter: blur(5px);
+      pointer-events: none;
+    }
+
+    li.done span {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .actions {
+      display: flex;
+      margin-top: 8px;
+    }
+
+    .actions button {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    .description {
+      width: 100%;
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .description.show {
+      display: block;
+    }
+
+    .description textarea {
+      width: 100%;
+      padding: 6px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #aaa;
+      color: inherit;
+      resize: none;
+    }
+
+    .clocks {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .clock, .stopwatch {
+      font-size: 18px;
+      margin: 5px 0;
+    }
+
+    .stopwatch-controls button {
+      margin: 0 5px;
+      padding: 4px 10px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="animated-bg" id="bg"></div>
+
+  <div class="theme-toggle">
+    <button id="toggleTheme">🌙</button>
+  </div>
+
+  <div class="container">
+    <h1>✨ To-Do List</h1>
+
+    <!-- Clocks -->
+    <div class="clocks">
+      <div class="clock" id="liveClock">Time: --:--:--</div>
+      <div class="stopwatch" id="stopwatch">Stopwatch: 00:00:00</div>
+      <div class="stopwatch-controls">
+        <button onclick="startStopwatch()">▶️ Start</button>
+        <button onclick="stopStopwatch()">⏸️ Stop</button>
+        <button onclick="resetStopwatch()">🔄 Reset</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="taskInput" placeholder="Add a new task..." />
+      <input type="date" id="dueDateInput" />
+      <button onclick="addTask()">Add</button>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    // 💫 Animated background follows cursor
+    document.addEventListener('mousemove', e => {
+      const bg = document.getElementById('bg');
+      const x = (e.clientX / window.innerWidth) * 100;
+      const y = (e.clientY / window.innerHeight) * 100;
+      bg.style.background = `radial-gradient(circle at ${x}% ${y}%, #4facfe, #00f2fe, #43e97b, #38f9d7)`;
+    });
+
+    // 🌗 Theme toggle
+    const toggleBtn = document.getElementById("toggleTheme");
+    toggleBtn.addEventListener("click", () => {
+      document.body.classList.toggle("light-mode");
+      toggleBtn.textContent = document.body.classList.contains("light-mode") ? "☀️" : "🌙";
+    });
+
+    function addTask() {
+      const input = document.getElementById("taskInput");
+      const dueDate = document.getElementById("dueDateInput");
+      const taskText = input.value.trim();
+      const dueDateVal = dueDate.value;
+
+      if (taskText === "") return;
+
+      const li = document.createElement("li");
+
+      const span = document.createElement("span");
+      span.innerHTML = `<strong>${taskText}</strong>` + (dueDateVal ? ` <em>(Due: ${dueDateVal})</em>` : "");
+
+      const actions = document.createElement("div");
+      actions.classList.add("actions");
+
+      const doneBtn = document.createElement("button");
+      doneBtn.innerHTML = "✔️";
+      doneBtn.onclick = () => li.classList.toggle("done");
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.innerHTML = "🗑️";
+      deleteBtn.onclick = () => li.remove();
+
+      const describeBtn = document.createElement("button");
+      describeBtn.innerHTML = "📝";
+      describeBtn.onclick = () => {
+        description.classList.toggle("show");
+      };
+
+      const focusBtn = document.createElement("button");
+      focusBtn.innerHTML = "🎯";
+      focusBtn.onclick = () => toggleFocus(li);
+
+      actions.appendChild(doneBtn);
+      actions.appendChild(describeBtn);
+      actions.appendChild(focusBtn);
+      actions.appendChild(deleteBtn);
+
+      const description = document.createElement("div");
+      description.classList.add("description");
+
+      const textarea = document.createElement("textarea");
+      textarea.placeholder = "Add task description...";
+      description.appendChild(textarea);
+
+      li.appendChild(span);
+      li.appendChild(actions);
+      li.appendChild(description);
+
+      document.getElementById("taskList").appendChild(li);
+      input.value = "";
+      dueDate.value = "";
+    }
+
+    function toggleFocus(targetLi) {
+      const listItems = document.querySelectorAll("#taskList li");
+      listItems.forEach(li => {
+        if (li !== targetLi) {
+          li.classList.toggle("blurred", !li.classList.contains("blurred"));
+        }
+      });
+      targetLi.classList.toggle("focused");
+    }
+
+    // ⏰ Live Clock
+    setInterval(() => {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      document.getElementById("liveClock").textContent = `Time: ${timeString}`;
+    }, 1000);
+
+    // ⏱️ Stopwatch logic
+    let stopwatchInterval;
+    let stopwatchSeconds = 0;
+
+    function updateStopwatchDisplay() {
+      const hours = String(Math.floor(stopwatchSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((stopwatchSeconds % 3600) / 60)).padStart(2, '0');
+      const seconds = String(stopwatchSeconds % 60).padStart(2, '0');
+      document.getElementById("stopwatch").textContent = `Stopwatch: ${hours}:${minutes}:${seconds}`;
+    }
+
+    function startStopwatch() {
+      if (!stopwatchInterval) {
+        stopwatchInterval = setInterval(() => {
+          stopwatchSeconds++;
+          updateStopwatchDisplay();
+        }, 1000);
+      }
+    }
+
+    function stopStopwatch() {
+      clearInterval(stopwatchInterval);
+      stopwatchInterval = null;
+    }
+
+    function resetStopwatch() {
+      stopStopwatch();
+      stopwatchSeconds = 0;
+      updateStopwatchDisplay();
+    }
+  </script>
+</body>
+</html>
