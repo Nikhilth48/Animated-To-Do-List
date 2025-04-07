@@ -28,4 +28,4 @@ CSS3 (with transitions and animations)
 JavaScript (DOM manipulation, event handling, localStorage)
 
 🌐 Live Demo
-🖱️ Check it out live here!
+🖱️ [Check it out live here!](https://nikhilth48.github.io/Animated-To-Do-List/)
